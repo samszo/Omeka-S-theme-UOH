@@ -1,0 +1,25 @@
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$user = $this->identity();
+
+foreach ($itemSetOwners as $email => $itemSetOwner) {
+    if($user->getEmail()==$email){
+        $itemSets = $itemSetOwner['item_sets'];
+    }
+}
+?>
+
+<form class="px-4 py-3">
+    <div class="mb-3">
+        <?php foreach ($itemSets as $itemSet): ?>
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input iss" id="ddc<?php echo $itemSet->id();?>">
+            <label class="form-check-label" for="ddc<?php echo $itemSet->id();?>">
+                <?php echo $itemSet->displayTitle();?>
+            </label>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</form>
+

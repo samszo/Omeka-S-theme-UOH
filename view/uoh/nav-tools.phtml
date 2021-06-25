@@ -1,0 +1,48 @@
+<?php
+if ($this->userIsAllowed('Omeka\Api\Adapter\ItemSetAdapter', 'create')){
+    $urlItemSetAdd = $this->url('admin').'/item-set/add';     
+}
+$item = $this->vars('item');
+
+?>
+<nav class="navbar navbar-expand-lg bg-light">
+  <div class="container-fluid">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+            <a class="navbar-brand" href="<?php echo $item->adminUrl(); ?>" target="_blank" title="Modifier la ressource"><i class="fas fa-edit fa-3x"></i></a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="nbddEvalResoource" title="Evaluer la ressource" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="far fa-thumbs-up fa-3x"></i>
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="nbddEvalResoource">
+            <li><a class="dropdown-item" href="#">Action</a></li>
+            <li><a class="dropdown-item" href="#">Another action</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#">Something else here</a></li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="nbddAjoutCollection" title="Ajouter la ressource à une collection" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="far fa-bookmark fa-3x"></i>
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="nbddAjoutCollection">
+            <li><a class="dropdown-item" target="_blank" href="<?php echo $urlItemSetAdd;?>">Ajouter une collection</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" target="_blank" >Sélectionner les collections</a></li>
+            <li>
+            <?php echo $this->itemSetSelector(); ?>
+            </li>
+          </ul>
+        </li>
+        </li>
+      </ul>
+  </div>
+</nav>
+<script>
+    let cii = d3.selectAll('.form-check-input iss');
+    console.log(cii);
+    
+</script>
+
+

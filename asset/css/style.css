@@ -1,0 +1,61 @@
+@charset "utf-8";
+
+:root {
+    --main-color: #c2000b;
+}
+
+/* CSS Document */
+h1, h2, h3, h4, h5 , h6, p
+{
+	padding:5px;
+	margin:5px;
+}
+@font-face
+{
+	font-family:maco_one;
+	src:url(../fonts/Marko_One/MarkoOne-Regular.ttf);
+}
+
+@font-face
+{
+	font-family:lato;
+	src:url(../fonts/Lato/Lato-Regular.ttf);
+}
+
+body
+{
+	font-family:lato;
+}
+.nav-link{
+	color: var(--main-color);
+}
+.page-footer {
+	color: inherit !important;
+	opacity: 0.6 !important;
+	margin-top: 30px;
+	text-align: center;
+}
+.logo{
+	height: 50px;
+	margin:1em;
+}
+#user-bar{
+	margin:1em;
+}
+.icon-hypothesis{
+	margin:1em;
+	margin-top: -12px;
+	width: 17px;
+}
+.evalRange{
+    display: flex;
+    justify-content: space-between;    
+}
+.lblRangeG{
+    color: rgb(206, 16, 16);
+    font: 12px sans-serif;
+}
+.lblRangeD{
+    color: rgb(82, 182, 95);
+    font: 12px sans-serif;  
+}

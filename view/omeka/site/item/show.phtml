@@ -1,0 +1,46 @@
+<?php
+$this->htmlElement('body')->appendAttribute('class', 'item resource show');
+$embedMedia = $this->siteSetting('item_media_embed', true);
+
+$RNF = $this->ResourceNetworksFactory($item);
+
+?>
+<?php echo $this->pageTitle($item->displayTitle(), 2); ?>
+<?php $this->trigger('view.show.before'); ?>
+<?php if ($this->identity()): ?>
+    <?php echo $this->partial('uoh/nav-tools', ['item'=>$item]);?>
+<?php endif; ?>
+
+<ul class="nav nav-tabs" id="itemTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="infos-tab" data-bs-toggle="tab" data-bs-target="#infos" type="button" role="tab" aria-controls="home" aria-selected="true">Contenus</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="reseau-tab" data-bs-toggle="tab" data-bs-target="#reseau" type="button" role="tab" aria-controls="reseau" aria-selected="false">Réseau</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="evaluations-tab" data-bs-toggle="tab" data-bs-target="#evaluations" type="button" role="tab" aria-controls="evaluations" aria-selected="false">Evaluations</button>
+  </li>
+</ul>
+<div class="tab-content" id="itemTabContent">
+  <div class="tab-pane fade show active" id="infos" role="tabpanel" aria-labelledby="infos-tab">
+      <?php echo $this->partial('uoh/contenu', ['item'=>$item,'embedMedia'=>$embedMedia,'site'=>$site]);?>
+  </div>
+  <div class="tab-pane fade" id="reseau" role="tabpanel" aria-labelledby="reseau-tab">
+      <?php echo $this->partial('uoh/reseau', $RNF);?>
+  </div>
+  <div class="tab-pane fade" id="evaluations" role="tabpanel" aria-labelledby="evaluations-tab">...</div>
+</div>
+
+
+<script>
+let tabs = d3.selectAll('button[data-bs-toggle="tab"]')
+tabs.on('click',e=>{
+        if(e.target.id=="reseau-tab"){
+            showCartoReseau();
+            //console.log(e);
+        }
+    });
+</script>
+
+<?php $this->trigger('view.show.after'); ?>

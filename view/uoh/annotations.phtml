@@ -1,0 +1,107 @@
+<?php
+$translate = $this->plugin('translate');
+
+$annotations = $this->vars('annotations');
+$item = $this->vars('item');
+
+//construction des datas
+$data = [];
+foreach ($annotations as $a) {
+
+    $d = [
+        'creator'=>$a->value('dcterms:creator')->valueResource()->linkPretty()
+        ,'contributor'=>$a->value('dcterms:contributor') ? $a->value('dcterms:contributor')->valueResource()->linkPretty() : ''
+        ,'date'=>$a->created()->format('Y-m-d H:i:s')
+        ,'url'=>$a->url()
+        ,'urlAdmin'=>$a->adminUrl()
+        ,'urlHypo'=>$a->value('schema:acquiredFrom') ? $a->value('schema:acquiredFrom')->uri() : ''
+    ];
+    $targets = $a->targets();
+    if (count($targets)){
+        foreach ($targets as $target){            
+            $tv = $target->value('rdf:value',['all'=>true]);
+            foreach ($tv as $v) {
+                if($v->valueResource())$d['target']=$v->valueResource()->linkPretty();
+                else{
+                    $vs = json_decode($v->__toString(),true);
+                    foreach ($vs as $k => $v) {
+                        if($k!='type')$d[$k]=$v;
+                    }    
+                }
+            }
+        }
+    }
+    $bodies = $a->bodies();
+    if (count($bodies)){
+        foreach ($bodies as $body){            
+            $bv = $body->value('rdf:value',['all'=>true]);
+            foreach ($bv as $b) {
+                $d['body']=$b->__toString();
+            }
+        }
+    }
+    if(!$item->value('dcterms:source')){
+        $d['source'] = $a->value('oa:hasSource')->asHtml();
+    }
+
+    $data[] = $d;
+}
+
+?>
+
+
+<h3><?php echo $translate('Annotations'); ?></h3>
+<div id="annoDetails" class="h-100 d-inline-block" style="overflow: scroll;"></div>
+<script>
+    let dtAnno = <?php echo json_encode($data);?>
+
+    dtAnno.sort(function(a, b) {
+        return a.start - b.start;
+    });
+    let divAnno = d3.select('#annoDetails').selectAll('div').data(dtAnno).enter()
+        .append('div')
+            .attr('class','border-bottom border-danger');
+    divAnno.append('div')
+        .html(d=>d.source ? '<h5>Source :</h5>'+d.source : '');
+    divAnno.append('div')
+        .html(d=>d.target ? '<h5>Mot-clefs :</h5>'+d.target : '');
+    divAnno.append('div')
+            .html(d=>d.exact ? '<h5>Citation :</h5>' : '')
+            .append('span')
+                .attr('class',"fs-6 fst-italic")
+                .text(d=>d.exact ? d.exact : '');
+    divAnno.append('div')
+            //.html(d=>d.body ? '<h5>Commentaire de '+d.creator+' :</h5><h6>'+d.contributor+'</h6>' : '')
+            .html(d=>d.body ? '<h5>Commentaire de '+d.creator+' :</h5>' : '')
+            .append('span')
+                .attr('class',"fs-6 lh-1")
+                .text(d=>d.body && !d.target ? d.body : '');
+    divAnno.append('i')
+            .attr('class',"fas fa-external-link-alt")
+            .style('margin','1em')
+            .on('click',(e,d)=>window.open(d.url,'_blank'));
+    divAnno.append('img')
+            .attr('class',"icon-hypothesis")
+            .attr('src','<?php echo $this->assetUrl('img/logo_hypothesis.png');?>')
+            .on('click',(e,d)=>window.open(d.urlHypo,'_blank'));
+    divAnno.append('i')
+            .attr('class',"fas fa-edit")
+            .style('margin','1em')
+            .on('click',(e,d)=>window.open(d.urlAdmin,'_blank'));
+    /*
+    let eval = divAnno.append('div')
+        .attr('class',"evalRange");
+    eval.append('label')
+        .attr('class', 'lblRangeG')
+        .text('inutile');
+    eval.append('input')
+        .attr('class', 'form-control-range')
+        .attr('type',"range")
+        .attr('max',100)
+        .attr('min',0);
+    eval.append('label')
+        .attr('class', 'lblRangeD')
+        .text('utile');
+    */
+</script>
+

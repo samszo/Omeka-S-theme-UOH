@@ -1,0 +1,26 @@
+<?php
+$escape = $this->plugin('escapeHtml');
+$userBar = $this->userBar();
+
+
+?>
+<header class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
+    <div class="d-flex align-items-center col-md-3 mb-2 mb-md-0 text-dark text-decoration-none" >
+        <a target="_blank" href="https://uoh.fr/">
+            <img class='logo' src="<?php echo $this->assetUrl('img/uoh.png'); ?>" alt="U0H" />
+        </a>
+        <a  target="_blank" href="https://www.univ-paris8.fr/">
+            <img class='logo' src="<?php echo $this->assetUrl('img/logop8-2.png'); ?>" alt="Université Paris 8" />
+        </a>
+        <!--
+        <a target="_blank" href="https://www.univ-paris8.fr/EA-349-Laboratoire-Paragraphe">
+                <img class='logo' src="<?php echo $this->assetUrl('img/logo_paragraphe.gif'); ?>"
+                    alt="Laboratoire Paragraphe" />
+        -->
+    </div>
+    <?php echo $this->partial('uoh/menu-haut', ['site'=>$site]);?>
+
+      <div class="col-md-3 text-end">
+          <?php echo $userBar;?>
+      </div>
+    </header>

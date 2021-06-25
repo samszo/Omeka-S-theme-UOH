@@ -1,0 +1,45 @@
+<?php
+
+
+?>
+
+<div class="cartoSem" id='cartoReseau' ></div>
+
+
+<script>
+    let dtReseau = <?php echo json_encode($this->vars('reseau'));?>
+      
+    ,settingsColors = <?php echo json_encode($this->vars('colors'));?>
+      
+    ,resource = <?php echo json_encode($this->vars('resource'));?>
+      
+    ,contDim, vizReseau;
+
+    /*
+    window.onload = function() { 
+        showCartoReseau();        
+    };
+    */
+
+    function showCartoReseau(){
+        if(!vizReseau){
+            d3.select('#cartoReseau')
+                .style('background-color','black')
+                .style('padding','10px')
+                .style('height','100%')
+                .style('width','100%');
+            contDim = d3.select('#itemTabContent').node().getBoundingClientRect();    
+
+            d3.select("#cartoReseau").select('svg').remove();
+            vizReseau = new reseau({'idCont':'cartoReseau','width':contDim.width,'height':600
+                ,'data':dtReseau, 'fctClickNode':showNode, 'settingsColors':settingsColors});
+        }
+    }
+    function showNode(e,d){
+        let url = window.location.pathname.replace(resource['o:id'],d.id);
+        if(d.group=='Annotation') url = url.replace('item','annotation');
+        if(d.group=='Collection') url = url.replace('item','item-set');
+        window.open(url,'_blank');
+    }
+
+</script>

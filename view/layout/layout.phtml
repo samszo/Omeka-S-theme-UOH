@@ -1,0 +1,78 @@
+<?php
+
+$escape = $this->plugin('escapeHtml');
+$siteTitle = $site->title();
+$this->htmlElement('html')->setAttribute('lang', $this->lang());
+$this->headMeta()->setCharset('utf-8');
+$this->headMeta()->appendName('viewport', 'width=device-width, initial-scale=1');
+$this->headTitle($siteTitle)->setSeparator(' · ');
+$this->headTitle()->append($this->setting('installation_title', 'Omeka S'));
+
+$this->headLink()->appendStylesheet($this->assetUrl('css/style.css'));
+$this->headLink()->appendStylesheet($this->assetUrl('css/w3.css'));
+
+$this->headLink()->prependStylesheet('//fonts.googleapis.com/css?family=Open+Sans:400,400italic,600,600italic,700italic,700');
+
+$this->headLink()->prependStylesheet($this->assetUrl('css/bootstrap.min.css'));
+
+$this->headScript()->appendFile($this->assetUrl('js/jquery-3.4.1.min.js'));
+$this->headScript()->appendFile($this->assetUrl('js/default.js'));
+$this->headScript()->appendFile($this->assetUrl('js/global.js', 'Omeka'));
+$this->headScript()->appendFile($this->assetUrl('js/bootstrap.min.js'));
+$this->headScript()->appendFile($this->assetUrl('js/all.min.js'));//fontawesome
+
+
+$this->headScript()->appendFile($this->assetUrl('js/d3.min.js'));
+$this->headScript()->appendFile($this->assetUrl('js/reseau.js'));
+
+
+$this->jsTranslate();
+$this->trigger('view.layout');
+
+?>
+<?php echo $this->doctype(); ?>
+<?php echo $this->htmlElement('html'); ?>
+    <head>
+        <?php echo $this->headMeta(); ?>
+        <?php echo $this->headTitle(); ?>
+        <?php echo $this->headLink(); ?>
+        <?php echo $this->headStyle(); ?>
+        <?php echo $this->headScript(); ?>
+        
+        <style>
+            <?php if ($accentColor = $this->themeSetting('accent_color')): ?>
+            a:link,
+            a:visited {
+                color: <?php echo $accentColor; ?>
+            }
+            
+            a:active,
+            a:hover {
+                color: <?php echo $accentColor; ?>;
+                opacity: .75;
+            }
+            <?php endif; ?>
+        </style>
+        
+    </head>
+
+    <?php echo $this->htmlElement('body'); ?>
+       <!--- begin header----->
+       <?php echo $this->partial('omeka/site/header'); ?>
+       <!--- end header------->
+
+        <div class="clearfix"></div>
+        <div class="container">
+
+            <?php echo $this->content; ?>
+            
+           <!--- begin comment----->
+            <?php 
+            //echo $this->partial('omeka/site/comment'); 
+            ?>
+           <!--- end comment------->
+
+        </div>
+        <?php echo $this->partial('uoh/footer'); ?>
+    </body>
+</html>
