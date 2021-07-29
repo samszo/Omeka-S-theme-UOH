@@ -1,4 +1,9 @@
 <?php
+$json = $this->params()->fromQuery('json') ? $this->params()->fromQuery('json') : $this->params()->fromPost('json', '');
+if($json){
+    echo $this->content;
+    return ;
+}
 
 $escape = $this->plugin('escapeHtml');
 $siteTitle = $site->title();
@@ -14,12 +19,18 @@ $this->headLink()->appendStylesheet($this->assetUrl('css/w3.css'));
 $this->headLink()->prependStylesheet('//fonts.googleapis.com/css?family=Open+Sans:400,400italic,600,600italic,700italic,700');
 
 $this->headLink()->prependStylesheet($this->assetUrl('css/bootstrap.min.css'));
+$this->headLink()->prependStylesheet($this->assetUrl('css/star-rating.min.css'));//rate star
+$this->headLink()->prependStylesheet($this->assetUrl('themes/krajee-fa/theme.min.css'));//rate star
+
 
 $this->headScript()->appendFile($this->assetUrl('js/jquery-3.4.1.min.js'));
 $this->headScript()->appendFile($this->assetUrl('js/default.js'));
 $this->headScript()->appendFile($this->assetUrl('js/global.js', 'Omeka'));
 $this->headScript()->appendFile($this->assetUrl('js/bootstrap.min.js'));
 $this->headScript()->appendFile($this->assetUrl('js/all.min.js'));//fontawesome
+//rate star
+$this->headScript()->appendFile($this->assetUrl('js/star-rating.min.js'));
+$this->headScript()->appendFile($this->assetUrl('themes/krajee-fa/theme.min.js'));
 
 
 $this->headScript()->appendFile($this->assetUrl('js/d3.min.js'));

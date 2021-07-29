@@ -6,8 +6,21 @@ $item = $this->vars('item');
 
 //construction des datas
 $data = [];
+$recommandations = [];
+$doublonsEval = [];
 foreach ($annotations as $a) {
-
+    $cId = $a->value('dcterms:creator')->valueResource()->id();
+    if(isset($doublonsEval[$cId])) $e = $recommandations[$doublonsEval[$cId]];
+    else {
+        $doublonsEval[$cId]=count($recommandations);
+        $e = [            
+            'creator'=>$a->value('dcterms:creator')->valueResource()->linkPretty(),
+            'evals'=>[
+                ['niv'=>'Master','nb'=>0,'sum'=>0, 'id'=>$cId],
+                ['niv'=>'Licence','nb'=>0,'sum'=>0, 'id'=>$cId]
+            ]
+        ];
+    }
     $d = [
         'creator'=>$a->value('dcterms:creator')->valueResource()->linkPretty()
         ,'contributor'=>$a->value('dcterms:contributor') ? $a->value('dcterms:contributor')->valueResource()->linkPretty() : ''
@@ -36,25 +49,106 @@ foreach ($annotations as $a) {
         foreach ($bodies as $body){            
             $bv = $body->value('rdf:value',['all'=>true]);
             foreach ($bv as $b) {
+                //gestion des évaluations
+                if($b->valueResource())$e=getRateItem($b->valueResource(), $e);
                 $d['body']=$b->__toString();
             }
         }
     }
     if(!$item->value('dcterms:source')){
-        $d['source'] = $a->value('oa:hasSource')->asHtml();
+        if($a->value('oa:hasSource'))
+           $d['source'] = $a->value('oa:hasSource')->asHtml();
     }
 
-    $data[] = $d;
+    if($e['evals'][0]['nb'] || $e['evals'][1]['nb']) $recommandations[$doublonsEval[$cId]] = $e;
+    else $data[] = $d;
 }
+
+$t = 1;
+
+function getRateItem($br, $e){
+    foreach ($e['evals'] as $i=>$k) {
+        if($br->value('ma:isRatingOf')->__toString()=="rateItemFor".$k['niv']){
+            $rate = floatval($br->value('ma:hasRating')->__toString());
+            $e['evals'][$i]['sum'] += $rate;
+            $e['evals'][$i]['nb']++; 
+        }
+    }
+    return $e;
+}
+
 
 ?>
 
+<!--
+<h3><?php echo $translate('Recommandations'); ?></h3>
+<div id="recommandationsDetails" class="h-50 d-inline-block" style="overflow: scroll;"></div>
+-->
 
 <h3><?php echo $translate('Annotations'); ?></h3>
-<div id="annoDetails" class="h-100 d-inline-block" style="overflow: scroll;"></div>
+<div id="annoDetails" class="h-50 d-inline-block" style="overflow: scroll;"></div>
 <script>
-    let dtAnno = <?php echo json_encode($data);?>
+    let dtAnno = <?php echo json_encode($data);?>;
+    
+    showAnno(dtAnno);
 
+    let dtEval = <?php echo json_encode($recommandations);?>;
+    showRecommandations(dtEval);
+    $('#ddRecommandationsListe .kv-fa').rating({
+        theme: 'krajee-fa',
+        filledStar: '<i class="fa fa-star"></i>',
+        emptyStar: '<i class="fa fa-star"></i>',
+        showClear:false,
+        showCaption:false,
+        readonly:true
+    });
+
+   function showRecommandations(evals){
+
+    let rowCreator = d3.select('#ddRecommandationsListe').selectAll('li').data(evals).enter()
+            .append('li').append('a')
+                .attr('class','dropdown-item')
+                .attr('href','#')
+                .append('div').attr('class','container-fluid')
+                .append('div').attr('class','row');
+    let divEval = rowCreator.selectAll('div').data(d=>d.evals).enter().append('div').attr('class','col')
+        .append('form').attr('class','d-flex justify-content-start');
+    divEval.append('label')
+        .attr('for',d=>'rateItemFor'+d.niv+d.id)
+        .attr('style','padding-top: 3px;')
+        .html(d=>d.niv);
+    divEval.append('input')
+        .attr('id',d=>'rateItemFor'+d.niv+d.id)
+        .attr('type','text')
+        .attr('data-size','xs')
+        .attr('value',d=>d.nb ? d.sum/d.nb:0)
+        .attr('class','kv-fa rating-loading');
+
+    rowCreator.append('div')
+                .attr('class','col')
+                .html(d=>d.creator);        
+
+       /*
+        let divCreator = d3.select('#recommandationsDetails').selectAll('div').data(evals).enter()
+            .append('div')
+                .attr('class','border-bottom border-danger')
+                .append('div')
+                .html(d=>'<h5>'+d.creator+' :</h5>');
+        let divEval = divCreator.selectAll('div').data(d=>d.evals).enter().append('div').attr('class','mb-8 row');
+        divEval.append('label')
+            .attr('for',d=>'rateItemFor'+d.niv+d.id)
+            .attr('class','col-sm-2 col-form-label')
+            .html(d=>d.niv);
+        divEval.append('div').attr('class','col-sm-3').append('input')
+            .attr('id',d=>'rateItemFor'+d.niv+d.id)
+            .attr('type','text')
+            .attr('data-size','xs')
+            .attr('value',d=>d.nb ? d.sum/d.nb:0)
+            .attr('class','kv-fa rating-loading');
+        */
+
+   }
+   function showAnno(dtAnno){
     dtAnno.sort(function(a, b) {
         return a.start - b.start;
     });
@@ -103,5 +197,7 @@ foreach ($annotations as $a) {
         .attr('class', 'lblRangeD')
         .text('utile');
     */
+   }
+
 </script>
 

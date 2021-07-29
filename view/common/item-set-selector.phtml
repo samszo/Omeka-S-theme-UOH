@@ -2,24 +2,67 @@
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $user = $this->identity();
+$item = $this->api()->read('items',$this->params()->fromRoute('id'))->getContent();
+$itemSetsItem = $item->itemSets();
 
 foreach ($itemSetOwners as $email => $itemSetOwner) {
     if($user->getEmail()==$email){
         $itemSets = $itemSetOwner['item_sets'];
     }
 }
+
+function itemSetsItemChecked($itemSetsItem, $isId){
+    foreach ($itemSetsItem as $is) {
+        if($is->id()==$isId) return 'checked url="'.$is->url().'" ';
+    }
+    return ' url="'.$is->url().'" ';
+}
+
 ?>
 
 <form class="px-4 py-3">
     <div class="mb-3">
         <?php foreach ($itemSets as $itemSet): ?>
-        <div class="form-check">
-            <input type="checkbox" class="form-check-input iss" id="ddc<?php echo $itemSet->id();?>">
+        <div class="form-check" >
+            <input type="checkbox" <?php echo itemSetsItemChecked($itemSetsItem, $itemSet->id());?>
+            onchange="itemSetsItemChange(<?php echo $itemSet->id().','.$item->id();?>)" 
+            class="form-check-input iss" id="ddc<?php echo $itemSet->id();?>">
             <label class="form-check-label" for="ddc<?php echo $itemSet->id();?>">
                 <?php echo $itemSet->displayTitle();?>
             </label>
+            <i id='itemSetsItemSpin<?php echo $itemSet->id();?>' style='display:none' class="fas fa-cog fa-spin" ></i>
         </div>
         <?php endforeach; ?>
     </div>
 </form>
+<script>
+function itemSetsItemChange(isId, id){
+    let dt = {'isId':isId, 'id':id, 'checked':this.event.target.checked};
+    //gestion du loading
+    d3.select('#itemSetsItemSpin'+isId).style('display','block');
+    $.ajax({
+          type: 'POST',
+          dataType: 'json',
+          url: urlChangeItemItemSet,
+          data: dt,
+    }).done(function(data) {
+        console.log(data);        
+        d3.select('#itemSetsItemSpin'+isId).style('display','none');
+        if(!dt.checked)d3.select('#itemSetsItem'+isId).remove();
+        else appendItemItemSet(data);
+    })
+    .fail(function(e) {
+        console.log(e);
+        d3.select('#itemSetsItemSpin'+isId).style('display','none');
+    });
+
+}
+function appendItemItemSet(d){
+    d3.select('#itemSetsItemNavBarListe')
+        .append('li').attr('class','nav-item').attr('id','itemSetsItem'+d['o:id'])
+        .append('a').attr('class','nav-link active ').attr('aria-current','page')
+            .attr('href', d3.select('#ddc'+d['o:id']).attr('url'))
+            .html(d['o:title']+' /');    
+}
+</script>
 

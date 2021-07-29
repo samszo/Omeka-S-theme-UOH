@@ -1,0 +1,30 @@
+<?php
+
+$type = $this->params()->fromQuery('type','');
+$log = $this->logger();
+
+switch ($type) {
+    case 'evalEtoile':
+            //création des rapports
+            $user = $this->identity();
+            $ca = $this->CartoAffectFactory(['user'=>$user,'view'=>$this->params()->fromPost()]);
+            $r = $this->params()->fromPost('rapports');
+            $etoile = $this->getSumEtoile([
+                'hasDoc'=>$r['jdc:hasDoc'][0]['value']
+                ,'ratingSystem'=>$r['ma:hasRatingSystem'][0]['value']
+                ,'ratingOf'=>$r['ma:isRatingOf'][0]
+            ]);            
+            echo $this->json(['ratingOf'=>$r['ma:isRatingOf'][0],'value'=>$etoile]);                
+            break;
+    case 'changeItemItemSet':
+        $data = $this->params()->fromPost();
+        $data['rt']=$type;
+        echo $this->json( $this->CartoAffectFactory(['view'=>$data]));        
+        break;                    
+}
+
+
+?>
+
+
+

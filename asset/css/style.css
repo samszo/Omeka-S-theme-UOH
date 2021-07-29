@@ -59,3 +59,7 @@ body
     color: rgb(82, 182, 95);
     font: 12px sans-serif;  
 }
+.rateItemSpin{
+	margin-left: 6px;margin-right: 6px;margin-top: 8px;
+	display: none;
+}

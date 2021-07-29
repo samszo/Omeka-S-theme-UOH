@@ -1,0 +1,25 @@
+<?php
+$uri = $this->vars('uris');
+?>
+<!-- tabs des uris DEB -->
+<ul class="nav nav-tabs" id="itemUriTab" role="tablist">
+<?php foreach ($uri as $i => $u): ?>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link <?php echo $i==0 ? 'active' : '';?>" id="uri-tab-<?php echo $i;?>" data-bs-toggle="tab" 
+        data-bs-target="#uri-infos-<?php echo $i;?>" type="button" role="tab" 
+        aria-controls="uri-infos-<?php echo $i;?>" aria-selected="true"><?php echo $u['label'];?></button>
+    </li>
+<?php endforeach;?>
+</ul>
+<div class="tab-content" id="itemUriTabContent">
+<?php foreach ($uri as $i => $u): ?>
+    <div class="tab-pane fade show <?php echo $i==0 ? 'active' : '';?>" 
+        id="uri-infos-<?php echo $i;?>" role="tabpanel" aria-labelledby="uri-tab-<?php echo $i;?>">
+
+        <iframe id="ifUriTab<?php echo $i;?>" width="100%" height="560px" 
+            src="<?php echo $u['uri'];?>">
+        </iframe>
+    </div>
+<?php endforeach;?>
+</div>
+<!-- tabs des uris END -->

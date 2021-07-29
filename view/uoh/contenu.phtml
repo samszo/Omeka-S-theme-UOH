@@ -1,17 +1,47 @@
 <?php
+$allowEval=false;
+if ($this->userIsAllowed(\Annotate\Entity\Annotation::class, 'create')) {
+  $allowEval=true;
+}
+$urlItemSetAdd=false;
+if ($this->userIsAllowed('Omeka\Api\Adapter\ItemSetAdapter', 'create')){
+    $urlItemSetAdd = $this->url('admin').'/item-set/add';     
+  }
+$user = $this->identity();
+  
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $item = $this->vars('item');
 $site = $this->vars('site');
-$embedMedia = $this->vars('embedMedia');
+
+//gestion de l'évaluation étoile
+$oCribleEtoile = $this->vars('oCribleEtoile');
+$cribleEtoile = $this->vars('cribleEtoile');
+$etoileLicence = $this->getSumEtoile([
+    'hasDoc'=>$item->id()
+    ,'ratingSystem'=>$oCribleEtoile->id()
+    ,'ratingOf'=>'rateItemForLicence'
+]);
+$etoileMaster = $this->getSumEtoile([
+    'hasDoc'=>$item->id()
+    ,'ratingSystem'=>$oCribleEtoile->id()
+    ,'ratingOf'=>'rateItemForMaster'
+]);
+
+$urlAjax = $site->siteUrl()."/page/ajax?json=1";
+$urlAjoutRapports = $urlAjax."&type=evalEtoile";
+$urlChangeItemItemSet = $urlAjax."&type=changeItemItemSet";
+
+$embedMedia = $this->siteSetting('item_media_embed', true);
+
 $itemMedia = $item->media();
 $item->displayValues();
 
-//construction de la source de l'iframe
-$srcIframe = "";
-if($item->resourceClass() && $item->resourceClass()->label()=="Webpage"){
-    $srcIframe = $item->value('dcterms:source')->uri();
-}
+
+
+//construction des données de la navigation iframe
+$arrUris = $this->getUris($item);
+
 //récupération des annotations
 $relations = $item->subjectValues();
 $annotations = [];
@@ -33,32 +63,91 @@ foreach ($relations as $k => $r) {
             <div class="container-fluid">
                 <a class="navbar-brand" href="#"><?php echo $translate('Item sets').' : '; ?></a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    data-bs-target="#navbarItemSet" aria-controls="navbarItemSet"
                     aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <div class="collapse navbar-collapse" id="navbarItemSet">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0" id='itemSetsItemNavBarListe'>
+                        <?php if ($urlItemSetAdd) : ?>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="nbddAjoutCollection" title="Ajouter la ressource à une collection" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="far fa-bookmark fa-1x"></i>
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="nbddAjoutCollection">
+                                <li><a class="dropdown-item" target="_blank" href="<?php echo $urlItemSetAdd;?>">Ajouter une collection</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" target="_blank" >Sélectionner les collections</a></li>
+                                <li>
+                                <?php echo $this->itemSetSelector(); ?>
+                                </li>
+                            </ul>
+                        </li>
+                        <?php endif; ?>
                         <?php foreach ($itemSets as $itemSet): ?>
-                        <li class="nav-item">
-                            <a class="nav-link active" aria-current="page"
-                                href="<?php echo $escape($itemSet->url()); ?>"><?php echo $itemSet->displayTitle(); ?></a>
+                        <li class="nav-item isi" id='itemSetsItem<?php echo $itemSet->id();?>' >
+                            <a class="nav-link active " aria-current="page"
+                                href="<?php echo $escape($itemSet->url()); ?>"><?php echo $itemSet->displayTitle(); ?> /</a>
                         </li>
                         <?php endforeach; ?>
-                    </ul>
+                    </ul>                    
                 </div>
             </div>
         </nav>
         <?php endif; ?>
     </div>
     <div class="row">
-        <?php echo $item->value('dcterms:source') ? $item->value('dcterms:source')->asHtml() : '';?>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" id="nbTitleRecommandations" href="#"><?php echo $translate('Recommandations').' : '; ?></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarRecommandations" aria-controls="navbarRecommandations"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarRecommandations">
+                    <div class="col-5">
+                        <form class="d-flex justify-content-start">
+                            <label for="rateItemForLicence" class="col-form-label col-form-label-lg">Licence</label>
+                            <input id='rateItemForLicence' type="text" class="form-control form-control-lg kv-fa rating-loading" 
+                                value="<?php echo $etoileLicence;?>" data-size="sm" title="">                        
+                            <i id='rateItemForLicenceSpin' class="fas fa-cog fa-spin fa-2x rateItemSpin" ></i>
+                        </form>
+                    </div>
+                    <div class="col-5">
+                        <form class="d-flex justify-content-start">
+                            <label for="rateItemForMaster" class="col-form-label col-form-label-lg">Master</label>                
+                            <input id='rateItemForMaster' type="text" class="form-control form-control-lg kv-fa rating-loading" 
+                                        value="<?php echo $etoileMaster;?>" data-size="sm" title="">
+                            <i id='rateItemForMasterSpin' class="fas fa-cog fa-spin fa-2x rateItemSpin" ></i>
+                        </form>
+                    </div>
+
+                    <?php //if ($allowEval) : ?>
+                    <div class="col-2">
+                        <div class="btn-group dropstart">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="ddRecommandations" data-bs-toggle="dropdown" data-bs-auto-close="false" aria-expanded="false">
+                                <i class="fas fa-info-circle fa-2x"></i>
+                            </button>
+                            <ul id="ddRecommandationsListe" class="dropdown-menu" aria-labelledby="ddRecommandations" >
+                            </ul>
+                        </div>
+                    </div>
+                    <?php //endif; ?>
+
+
+                </div>
+            </div>
+        </nav>
     </div>
+
     <div class="row">
         <div class="col-8">
-            <?php if ($srcIframe): ?>
-            <iframe id="ifSource" width="100%" height="560px" src="<?php echo $srcIframe;?>">
-            </iframe>
+            <?php if (count($arrUris)==1): ?>
+                <iframe id="ifSource" width="100%" height="560px" src="<?php echo $arrUris[0]['uri'];?>">
+                </iframe>
+            <?php elseif (count($arrUris)>1): ?>
+                <?php echo $this->partial('uoh/nav-uris', ['uris'=>$arrUris]);?>
             <?php else: ?>
                 <?php if ($embedMedia && $itemMedia): ?>
                     <div class="media-embeds">
@@ -67,35 +156,124 @@ foreach ($relations as $k => $r) {
                         endforeach;
                         ?>
                     </div>
-                    <?php endif; ?>
-
-                    <?php echo $item->displayValues(); ?>
-
-                    <?php if (($this->siteSetting('show_attached_pages', true)) && ($sitePages = $item->sitePages($site->id()))): ?>
-                    <div class="property">
-                        <h4><?php echo $translate('Site pages'); ?></h4>
-                        <div class="values">
-                            <?php foreach ($sitePages as $sitePage): ?>
-                            <div class="value"><?php echo $sitePage->link($sitePage->title()); ?></div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (!$embedMedia && $itemMedia): ?>
-                    <div class="media-list">
-                        <?php foreach ($itemMedia as $media): ?>
-                        <?php echo $media->linkPretty(); ?>
-                        <?php endforeach; ?>
-                    </div>
                 <?php endif; ?>
-
             <?php endif; ?>
+
+            <?php echo $item->displayValues(); ?>
+
+            <?php if (($this->siteSetting('show_attached_pages', true)) && ($sitePages = $item->sitePages($site->id()))): ?>
+            <div class="property">
+                <h4><?php echo $translate('Site pages'); ?></h4>
+                <div class="values">
+                    <?php foreach ($sitePages as $sitePage): ?>
+                    <div class="value"><?php echo $sitePage->link($sitePage->title()); ?></div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            <?php if (!$embedMedia && $itemMedia): ?>
+            <div class="media-list">
+                <?php foreach ($itemMedia as $media): ?>
+                <?php echo $media->linkPretty(); ?>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
         </div>
         <div class="col-4" style="height: 560px;padding-bottom: 20px;">
             <?php echo $this->partial('uoh/annotations', ['annotations'=>$annotations,'item'=>$item]);?>
         </div>
     </div>
 </div>
+<script>
+    let idCarto = 'étoile'
+    , urlAjoutRapports = '<?php echo $urlAjoutRapports;?>'
+    , urlChangeItemItemSet = '<?php echo $urlChangeItemItemSet;?>'
+    , actant = <?php echo $user ? json_encode(['id'=>$user->getId(),'nom'=>$user->getName()]) : '{"id":"6","nom":"anonyme"}';?>
+    
+    , cribleEtoile = <?php echo json_encode($cribleEtoile);?>
+    
+    , item = <?php echo json_encode($item);?>
+
+
+    //dimensionnement du dropdown détails de recommandations
+    //if(actant.nom!="anonyme"){
+        let rectTitleRecommandations = document.getElementById("nbTitleRecommandations").getBoundingClientRect();
+        let rectDetailsRecommandations = document.getElementById("ddRecommandations").getBoundingClientRect();
+        d3.select('#ddRecommandationsListe').style('width',rectDetailsRecommandations.left-rectTitleRecommandations.right+'px');
+    //}
+    
+    $('#rateItemForMaster').rating({
+        theme: 'krajee-fa',
+        filledStar: '<i class="fa fa-star"></i>',
+        emptyStar: '<i class="fa fa-star"></i>',
+        showClear:false,
+        showCaption:false,
+    });
+    $('#rateItemForLicence').rating({
+        theme: 'krajee-fa',
+        filledStar: '<i class="fa fa-star"></i>',
+        emptyStar: '<i class="fa fa-star"></i>',
+        showClear:false,
+        showCaption:false,
+    });
+   
+    $('.rating,.kv-fa').on(
+      'change', function () {
+        if(actant.nom!="anonyme")setPosi($(this));
+    });
+
+    function setPosi(e){
+        //gestion du loading
+        d3.select('#'+e[0].id+'Spin').style('display','block');
+
+      //console.log()(e);
+      let val = e.val()
+      , start = new Date()
+      , strDate = start.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });    
+      let omk = {
+          'dcterms:title':e[0].id+' _ '+item['o:title']+' _ '+cribleEtoile.item['o:title']+' : '+actant.nom+' '+strDate
+          ,'dcterms:isReferencedBy':e[0].id+' _ '+item['o:id']+'_'+cribleEtoile.item['o:id']+' : '+start.valueOf()+' : '+actant.id
+          ,'jdc:creationDate':start
+          ,'ma:hasCreator':[{'type':'items','value':actant.id}]
+          ,'jdc:hasActant':[{'type':'items','value':actant.id}]
+          ,'ma:hasRating':[]
+          ,'ma:isRatingOf':[]
+          ,'ma:ratingScaleMax':5
+          ,'ma:ratingScaleMin':0
+          ,'ma:hasRatingSystem':[{'type':'items','value':cribleEtoile.item['o:id']}]
+          ,'jdc:hasDoc':[{'type':'items','value':item['o:id']}]
+          ,'jdc:hasConcept':[]
+      };
+      cribleEtoile.concepts.forEach(function(c, i){
+          omk['ma:hasRating'].push(val);
+          omk['ma:isRatingOf'].push(e[0].id);
+          omk['jdc:hasConcept'].push({'type':'items','value':c['o:id']});
+      })
+      let postData = {
+            'json':true,
+            'rt': 'Position étoile',
+            'rapports': omk
+        };
+      $.ajax({
+          type: 'POST',
+          dataType: 'json',
+          url: urlAjoutRapports,
+          data: postData,
+          }).done(function(data) {
+            d3.select('#'+e[0].id+'Spin').style('display','none');
+            $('#'+data.ratingOf).rating('update', data.value);
+          })
+          .fail(function(e) {
+            d3.select('#'+e[0].id+'Spin').style('display','none');
+            throw new Error("Sauvegarde imposible : " + e); 
+          });
+
+    }
+
+
+</script>
+
 
 
 

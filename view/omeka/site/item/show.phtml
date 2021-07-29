@@ -1,15 +1,27 @@
 <?php
 $this->htmlElement('body')->appendAttribute('class', 'item resource show');
-$embedMedia = $this->siteSetting('item_media_embed', true);
 
 $RNF = $this->ResourceNetworksFactory($item);
 
+$allowUser=false;
+if ($this->userIsAllowed(\Omeka\Entity\Item::class, 'update')) {
+  $allowUser=true;
+}
+
+$oCribleEtoile = $this->api()->read('items', $this->themeSetting('item_cribleetoile'))->getContent();
+$cribleEtoile = $this->CribleFactory("",$oCribleEtoile);
+
+
 ?>
-<?php echo $this->pageTitle($item->displayTitle(), 2); ?>
-<?php $this->trigger('view.show.before'); ?>
-<?php if ($this->identity()): ?>
-    <?php echo $this->partial('uoh/nav-tools', ['item'=>$item]);?>
+<?php if ($allowUser) : ?>
+<div class="float-start">
+<a class="navbar-brand" href="<?php echo $item->adminUrl(); ?>" target="_blank" title="Modifier la ressource"><i class="fas fa-edit fa-2x"></i></a>
+</div>
 <?php endif; ?>
+
+<?php echo $this->pageTitle($item->displayTitle(), 2); ?>
+
+<?php $this->trigger('view.show.before'); ?>
 
 <ul class="nav nav-tabs" id="itemTab" role="tablist">
   <li class="nav-item" role="presentation">
@@ -18,13 +30,20 @@ $RNF = $this->ResourceNetworksFactory($item);
   <li class="nav-item" role="presentation">
     <button class="nav-link" id="reseau-tab" data-bs-toggle="tab" data-bs-target="#reseau" type="button" role="tab" aria-controls="reseau" aria-selected="false">Réseau</button>
   </li>
+  <!--
   <li class="nav-item" role="presentation">
     <button class="nav-link" id="evaluations-tab" data-bs-toggle="tab" data-bs-target="#evaluations" type="button" role="tab" aria-controls="evaluations" aria-selected="false">Evaluations</button>
   </li>
+  -->
 </ul>
 <div class="tab-content" id="itemTabContent">
   <div class="tab-pane fade show active" id="infos" role="tabpanel" aria-labelledby="infos-tab">
-      <?php echo $this->partial('uoh/contenu', ['item'=>$item,'embedMedia'=>$embedMedia,'site'=>$site]);?>
+      <?php echo $this->partial('uoh/contenu', [
+          'item'=>$item,
+          'site'=>$site,
+          'oCribleEtoile' => $oCribleEtoile,
+          'cribleEtoile'  => $cribleEtoile
+    ]);?>
   </div>
   <div class="tab-pane fade" id="reseau" role="tabpanel" aria-labelledby="reseau-tab">
       <?php echo $this->partial('uoh/reseau', $RNF);?>

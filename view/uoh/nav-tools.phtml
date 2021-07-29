@@ -1,8 +1,15 @@
 <?php
 if ($this->userIsAllowed('Omeka\Api\Adapter\ItemSetAdapter', 'create')){
-    $urlItemSetAdd = $this->url('admin').'/item-set/add';     
+  $urlItemSetAdd = $this->url('admin').'/item-set/add';     
 }
+$allowEval=false;
+if ($this->userIsAllowed(\Annotate\Entity\Annotation::class, 'create')) {
+  $allowEval=true;
+}
+
 $item = $this->vars('item');
+$oCribleEtoile = $this->vars('oCribleEtoile');
+$cribleEtoile = $this->vars('cribleEtoile');
 
 ?>
 <nav class="navbar navbar-expand-lg bg-light">
@@ -12,14 +19,23 @@ $item = $this->vars('item');
             <a class="navbar-brand" href="<?php echo $item->adminUrl(); ?>" target="_blank" title="Modifier la ressource"><i class="fas fa-edit fa-3x"></i></a>
         </li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="nbddEvalResoource" title="Evaluer la ressource" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <a class="nav-link dropdown-toggle" href="#" id="nbddEvalResoource" title="Conseillé par les profs" role="button" data-bs-toggle="dropdown" aria-expanded="false">
           <i class="far fa-thumbs-up fa-3x"></i>
           </a>
           <ul class="dropdown-menu" aria-labelledby="nbddEvalResoource">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
+            <li>
+              <form class="px-2 py-1">
+                <label for="rateForLicence" class="form-label">Licence</label>
+                <input id='rateForLicence' type="text" class="kv-fa rating-loading" value="4" data-size="sm" title="">
+              </form>
+            </li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
+            <li>
+              <form class="px-2 py-1">
+                <label for="rateForMaster" class="form-label">Master</label>                
+                <input id='rateForMaster' type="text" class="kv-fa rating-loading" value="4" data-size="sm" title="">
+              </form>
+            </li>
           </ul>
         </li>
         <li class="nav-item dropdown">
@@ -40,8 +56,82 @@ $item = $this->vars('item');
   </div>
 </nav>
 <script>
+    let idCarto = 'étoile'
+    , actant = <?php echo $user ? json_encode(['id'=>$user->getId(),'nom'=>$user->getName()]) : '{"id":"6","nom":"anonyme"}';?>
+    
+    , criblesEtoile = <?php echo json_encode($cribleEtoile);?>
+    
+    , item = <?php echo json_encode($item);?>
+
+    $('.kv-fa').rating({
+        theme: 'krajee-fa',
+        filledStar: '<i class="fa fa-star"></i>',
+        emptyStar: '<i class="fa fa-star"></i>',
+        showClear:false,
+        showCaption:false,
+        readonly:<?php echo $allowEval ? 'false':'true'; ?>
+    });
+
     let cii = d3.selectAll('.form-check-input iss');
-    console.log(cii);
+    
+    $('.rating,.kv-fa').on(
+      'change', function () {
+        setPosi($(this).val());
+    });
+
+    function setPosi(e){
+      //console.log()(e);
+      let val = e.target.value
+      , c = criblesAction.cribles[idC]
+      , start = new Date()
+      , strDate = start.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });    
+      let omk = {
+          'dcterms:title':itemAction['o:title']+' _ '+curItem['o:title']+' _ '+c.item['o:title']+' : '+actant.nom+' '+strDate
+          ,'dcterms:isReferencedBy':itemAction['o:id']+'_'+curItem['o:id']+'_'+c.item['o:id']+'_'+ima['o:id']+' : '+start.valueOf()+' : '+actant.id
+          ,'jdc:creationDate':start
+          ,'ma:hasCreator':[{'type':'items','value':actant.id}]
+          ,'jdc:hasActant':[{'type':'items','value':actant.id}]
+          ,'schema:actionApplication':[{'type':'items','value':idProcess}]
+          ,'ma:hasRating':[]
+          ,'ma:isRatingOf':[]
+          ,'ma:ratingScaleMax':100
+          ,'ma:ratingScaleMin':0
+          ,'ma:hasRatingSystem':[{'type':'items','value':c.item['o:id']}]
+          ,'jdc:hasDoc':[{'type':'media','value':ima['o:id']},{'type':'items','value':curItem['o:id']}]
+          ,'jdc:distanceCenter':val
+          ,'jdc:distanceConcept':[]
+          ,'jdc:x':val
+          ,'jdc:y':0
+          ,'jdc:xRatingValue':val
+          ,'jdc:yRatingValue':0
+      };
+
+      c.concepts.forEach(function(c, i){
+          omk['ma:hasRating'].push(i==0 ? val : 100 - val);
+          omk['ma:isRatingOf'].push({'type':'items','value':c['o:id']});
+          omk['jdc:hasConcept'].push({'type':'items','value':c['o:id']});
+          omk['jdc:distanceConcept'].push(i==0 ? val : 100 - val);
+      })
+      let postData = {
+                  'json':true,
+                  'rt': 'Position sémantique : Geneva Emotion',
+                  'rapports': omk
+          };
+      $.ajax({
+          type: 'POST',
+          dataType: 'json',
+          url: urlAjoutRapports,
+          data: postData,
+          }).done(function(data) {
+            d3.select('#spin_'+idC).style('display','none');    
+          })
+          .fail(function(e) {
+                  //throw new Error("Sauvegarde imposible : " + e);
+                  d3.select('#spin_'+idC).style('display','none');    
+          });
+
+    }
+
     
 </script>
 
